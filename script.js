@@ -6,24 +6,32 @@ const notesSmallBody = document.querySelector(".notes__small-body");
 const notesTitle = document.querySelector(".notes__title");
 const notesBody = document.querySelector(".notes__body");
 
+let Data = [];
+
+window.addEventListener("load", () => {
+  if (JSON.parse(localStorage.getItem("dataNoteApp"))) {
+    showNote();
+  }
+});
+
 let noteDate = "";
 
 notesAdd.addEventListener("click", () => {
-  console.log(notesTitle.value);
-  console.log(notesBody.value);
+  getDate();
 
-  getDate ();
-  let div = document.createElement("div");
-  div.className = "notes__list-item notes__list-item--selected";
-  div.innerHTML = `
-        <div class="notes__small-title">${notesTitle.value}</div>
-        <div class="notes__small-body">${notesBody.value}</div>
-        <div class="notes__small-updated">${noteDate}</div>
-  `;
+  // ----------------------------------------------- add to LS
+  const dataObj = {
+    title: notesTitle.value.trim(),
+    body: notesBody.value.trim(),
+    data: noteDate,
+  };
+  Data.push(dataObj);
+  localStorage.setItem("dataNoteApp", JSON.stringify(Data));
 
-  notesList.insertBefore(div, notesList.children[0]);
+  showNote();
 });
 
+// --------------------------------------------------------- Date
 function getDate() {
   let date = new Date();
   let hours = date.getHours();
@@ -97,3 +105,51 @@ function getDate() {
 
   noteDate = `${week} , ${date.getDate()} ${month} ${year} at ${hours} : ${minutes} `;
 }
+
+// ---------------------------------------------------------- show note
+
+function showNote() {
+  Data = JSON.parse(localStorage.getItem("dataNoteApp"));
+  notesList.innerHTML = `
+          <div class="notes__list-item notes__list-item--selected f-item">
+            <div class="circle">+</div>
+          </div>
+  `;
+  Data.forEach((item) => {
+    let div = document.createElement("div");
+    div.className = "notes__list-item";
+    div.innerHTML = `
+          <div class="notes__small-title">
+            <div class="">${item.title}</div>
+            <div class="remove icon"></div>
+          </div>
+          <div class="notes__small-body">${item.body}</div>
+          <div class="notes__small-updated">${item.data}</div>
+    `;
+
+    notesList.insertBefore(div, notesList.children[0]);
+  });
+}
+
+//--------------------------------------------------------------- show clicked item
+
+notesList.addEventListener("click", (e) => {
+
+  if (
+    e.target.classList.contains("circle") ||
+    e.target.classList.contains("f-item")
+  ) {
+    notesTitle.value = "";
+    notesBody.value = "";
+
+    notesAdd.textContent = "Add Note"
+  }else if(e.target.classList.contains("remove")){
+    console.log(e.target.parentElement.textContent)
+  }else {
+    notesTitle.value = e.target.parentElement.children[0].textContent;
+    notesBody.value = e.target.parentElement.children[1].textContent;
+
+    notesAdd.textContent = "Update Note"
+  }
+});
+
