@@ -7,28 +7,58 @@ const notesTitle = document.querySelector(".notes__title");
 const notesBody = document.querySelector(".notes__body");
 
 let Data = [];
+let id = 0;
+let currentID;
 
 window.addEventListener("load", () => {
   if (JSON.parse(localStorage.getItem("dataNoteApp"))) {
     showNote();
+    id = Data[Data.length - 1].id;
   }
 });
 
 let noteDate = "";
 
 notesAdd.addEventListener("click", () => {
-  getDate();
+  // ----------------------------------------------- add new note to LS
+  if (notesAdd.textContent == "Add Note") {
+    getDate();
 
-  // ----------------------------------------------- add to LS
-  const dataObj = {
-    title: notesTitle.value.trim(),
-    body: notesBody.value.trim(),
-    data: noteDate,
-  };
-  Data.push(dataObj);
-  localStorage.setItem("dataNoteApp", JSON.stringify(Data));
+    id += 1;
+    const dataObj = {
+      id,
+      title: notesTitle.value.trim(),
+      body: notesBody.value.trim(),
+      data: noteDate,
+    };
+    Data.push(dataObj);
+    localStorage.setItem("dataNoteApp", JSON.stringify(Data));
 
-  showNote();
+    resetInput();
+
+    showNote();
+  }
+  // ----------------------------------------------- update note to LS
+  else {
+    let selectedItem = Data.find((item) => item.id == currentID);
+    if (
+      notesTitle.value != selectedItem.title ||
+      notesBody.value != selectedItem.body
+    ) {
+      let filterdArray = Data.filter((item) => item.id != currentID);
+      getDate();
+      const dataObject = {
+        id: Number(currentID) + 1,
+        title: notesTitle.value.trim(),
+        body: notesBody.value.trim(),
+        data: noteDate,
+      };
+      filterdArray.push(dataObject);
+      console.log(filterdArray);
+      localStorage.setItem("dataNoteApp", JSON.stringify(filterdArray));
+      showNote();
+    }
+  }
 });
 
 // --------------------------------------------------------- Date
@@ -118,6 +148,7 @@ function showNote() {
   Data.forEach((item) => {
     let div = document.createElement("div");
     div.className = "notes__list-item";
+    div.setAttribute("data-id", item.id);
     div.innerHTML = `
           <div class="notes__small-title">
             <div class="">${item.title}</div>
@@ -134,22 +165,40 @@ function showNote() {
 //--------------------------------------------------------------- show clicked item
 
 notesList.addEventListener("click", (e) => {
-
   if (
     e.target.classList.contains("circle") ||
     e.target.classList.contains("f-item")
   ) {
-    notesTitle.value = "";
-    notesBody.value = "";
+    resetInput();
+  } else if (e.target.classList.contains("remove")) {
+    removeItem(e);
+  } else {
+    // --------------------------------------------------------------------------show title and body of clicked item
+    notesTitle.value = e.target.parentElement.children[0].textContent.trim();
+    notesBody.value = e.target.parentElement.children[1].textContent.trim();
 
-    notesAdd.textContent = "Add Note"
-  }else if(e.target.classList.contains("remove")){
-    console.log(e.target.parentElement.textContent)
-  }else {
-    notesTitle.value = e.target.parentElement.children[0].textContent;
-    notesBody.value = e.target.parentElement.children[1].textContent;
-
-    notesAdd.textContent = "Update Note"
+    // --------------------------------------------------------------------------get id of clicked item
+    if (e.target.parentElement.classList.contains("notes__small-title")) {
+      currentID = e.target.parentElement.parentElement.getAttribute("data-id");
+    } else if (e.target.parentElement.classList.contains("notes__list-item")) {
+      currentID = e.target.parentElement.getAttribute("data-id");
+    }
+    notesAdd.textContent = "Update Note";
   }
 });
 
+// ---------------------------------------------------------- remove item
+
+function removeItem(e) {
+  let elemId = e.target.parentElement.parentElement.getAttribute("data-id");
+  let filterdArr = Data.filter((item) => item.id != elemId);
+  localStorage.setItem("dataNoteApp", JSON.stringify(filterdArr));
+  e.target.parentElement.parentElement.remove();
+  resetInput();
+}
+
+function resetInput() {
+  notesTitle.value = "";
+  notesBody.value = "";
+  notesAdd.textContent = "Add Note";
+}
